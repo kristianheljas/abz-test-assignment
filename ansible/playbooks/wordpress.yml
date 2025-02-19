@@ -1,0 +1,6 @@
+- hosts: wordpress
+  gather_facts: false
+  roles:
+    - name: upgrade_system_packages
+    - name: docker
+    - name: wordpress

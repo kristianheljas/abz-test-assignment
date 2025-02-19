@@ -1,0 +1,44 @@
+- name: Confifure database access
+  ansible.builtin.import_tasks:
+    file: database.yml
+
+- name: Create wordpress container
+  become: true
+  community.docker.docker_container:
+    name: wordpress
+    image: "{{ wordpress_docker_image }}"
+    pull: true
+    ports:
+      - 80:80
+    volumes:
+      - /var/www/html
+    env:
+      WORDPRESS_DB_HOST: "{{ wordpress_db_host }}"
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: "{{ wordpress_db_password }}"
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_REDIS_DSN: "tls://{{ wordpress_redis_host }}:6379?auth={{ wordpress_redis_password }}"
+
+- name: Check if wordpress is installed
+  become: true
+  changed_when: false
+  community.docker.docker_container_exec:
+    container: wordpress
+    user: www-data
+    command: bash -c "wp core is-installed 2>/dev/null && echo installed || echo not_installed"
+  register: wordpress_installation_status
+
+- name: Install wordpress
+  become: true
+  when: wordpress_installation_status.stdout == "not_installed"
+  community.docker.docker_container_exec:
+    container: wordpress
+    user: www-data
+    command: >
+      wp core install
+      --url="{{ wordpress_host }}"
+      --title=Wordpress
+      --admin_user=admin
+      --admin_password="{{ wordpress_admin_password }}"
+      --admin_email="{{ wordpress_admin_email }}"
+      --skip-email

@@ -1,0 +1,22 @@
+- name: Install mysql dependencies
+  become: true
+  ansible.builtin.package:
+    name: python3-pymysql
+
+- name: Create wordpress database
+  community.mysql.mysql_db:
+    login_host: "{{ wordpress_db_host }}"
+    login_user: root
+    login_password: "{{ wordpress_db_root_password }}"
+    name: wordpress
+
+- name: Create wordpress database user
+  community.mysql.mysql_user:
+    login_host: "{{ wordpress_db_host }}"
+    login_user: root
+    login_password: "{{ wordpress_db_root_password }}"
+    name: wordpress
+    password: "{{ wordpress_db_password }}"
+    host: "%"
+    priv: 'wordpress.*:ALL'
+    column_case_sensitive: true
